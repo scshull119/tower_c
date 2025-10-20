@@ -3,4 +3,9 @@ project(tower_c C)
 
 set(CMAKE_C_STANDARD 23)
 
-add_executable(tower_c main.c)
+# Dependencies
+set(RAYLIB_VERSION 5.5)
+find_package(raylib ${RAYLIB_VERSION} REQUIRED)
+
+add_executable(${PROJECT_NAME} main.c)
+target_link_libraries(${PROJECT_NAME} raylib)
