@@ -14,7 +14,7 @@ void loadMstsModel() {
         printf("Unable to open .s file.\n");
         return;
     }
-    char header[16];
+    unsigned char header[16];
     fread(header, 16, 1, sFile);
     for (int i = 0; i < 16; i++) {
         printf("%d\n", header[i]);
