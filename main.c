@@ -3,23 +3,42 @@
 #include <string.h>
 #include "raylib.h"
 
-void loadMstsModel() {
-    // Loads an MSTS model and prepares it for rendering by raylib
-    char path[128];
+FILE *loadDataFile(const char *filePath) {
+    char path[256];
     strcpy(path, getenv("TCRS_BASE"));
-    strcat(path, "/trains/pacific/pacific.s");
-    printf("Loading MSTS model...\n");
-    FILE *sFile = fopen(path, "rb");
-    if (sFile == NULL) {
-        printf("Unable to open .s file.\n");
+    strcat(path, filePath);
+    printf("Loading data from %s\n", path);
+
+    FILE *dataFile = fopen(path, "rb");
+    if (dataFile == NULL) {
+        printf("Unable to open data file.\n");
+        return nullptr;
+    }
+    return dataFile;
+}
+
+void readFileHeader(FILE *file) {
+    unsigned char buffer[34];
+    bool isUTF16 = false;
+    fread(buffer, 1, 2, file);
+    if (buffer[0] == 0xFF && buffer[1] == 0xFE) {
+        isUTF16 = true;
+    }
+    if (isUTF16) {
+        printf("File is UTF-16.\n");
+    } else {
+        printf("File is not UTF-16.\n");
+    }
+}
+
+void processDataFile(const char *filePath) {
+    FILE *dataFile = loadDataFile(filePath);
+    if (dataFile == NULL) {
         return;
     }
-    unsigned char header[16];
-    fread(header, 16, 1, sFile);
-    for (int i = 0; i < 16; i++) {
-        printf("%d\n", header[i]);
-    }
-    fclose(sFile);
+    readFileHeader(dataFile);
+
+    fclose(dataFile);
 }
 
 void renderWindow() {
@@ -43,7 +62,7 @@ int main(void) {
     printf("Tower C Railroad Simulator\n");
     printf("Version 0.1\n");
 
-    loadMstsModel();
+    processDataFile("/trains/pacific/pacific.s");
     // renderWindow();
 
     printf("TCRS exited.\n");
