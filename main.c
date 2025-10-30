@@ -143,7 +143,7 @@ int main(void) {
     printf("Tower C Rail Simulator\n");
     printf("Version 0.1\n\n");
 
-    processDataFile("/trains/pacific/pacific.s");
+    processDataFile("/trains/trainset/pacific/pacific.s");
     // renderWindow();
 
     printf("\nTCRS exited.\n");
