@@ -15,6 +15,7 @@ enum Endianness {
 };
 
 FILE *loadDataFile(const char *filePath) {
+    // TODO: Protect against buffer overflow if filepath is too long
     char path[256];
     strcpy(path, getenv("TCRS_BASE"));
     strcat(path, filePath);
@@ -72,7 +73,8 @@ unsigned char readCharUTF16(FILE *file, const enum Endianness ev) {
     return val;
 }
 
-void readFileHeader(FILE *file, char *header, const int size, const enum Encoding encoding) {
+void readStringFromFile(FILE *file, char *header, const int size, const enum Encoding encoding) {
+    // TODO: Correctly handle EOF when reading characters.
     if (encoding == UTF8) {
         for (int i = 0; i < size; i++) {
             header[i] = (char) readCharUTF8(file);
@@ -105,9 +107,17 @@ void processDataFile(const char *filePath) {
             break;
     }
 
-    char header[9];
-    readFileHeader(dataFile, header, 8, fileEncoding);
-    printf("%s\n", header);
+    char header[17];
+    char subHeader[15];
+    char nextText[6];
+    readStringFromFile(dataFile, header, 16, fileEncoding);
+    readStringFromFile(dataFile, subHeader, 14, fileEncoding);
+    // TODO: Find a safer way to seek for beginning of data after the header and subheader.
+    fseek(dataFile, 8, SEEK_CUR);
+    readStringFromFile(dataFile, nextText, 5, fileEncoding);
+    printf("File header: %s\n", header);
+    printf("File sub-header: %s\n", subHeader);
+    printf("Next text: %s\n", nextText);
 
     fclose(dataFile);
 }
@@ -131,12 +141,12 @@ void renderWindow() {
 
 int main(void) {
     printf("Tower C Rail Simulator\n");
-    printf("Version 0.1\n");
+    printf("Version 0.1\n\n");
 
     processDataFile("/trains/pacific/pacific.s");
     // renderWindow();
 
-    printf("TCRS exited.\n");
+    printf("\nTCRS exited.\n");
 
     return 0;
 }
