@@ -36,7 +36,6 @@ enum Encoding processBOM(FILE *file) {
     if (bom[0] == 0xFF && bom[1] == 0xFE) {
         fseek(file, -1, SEEK_CUR);
         return UTF16LE;
-
     }
     if (bom[0] == 0xFE && bom[1] == 0xFF) {
         fseek(file, -1, SEEK_CUR);
@@ -45,6 +44,7 @@ enum Encoding processBOM(FILE *file) {
     if (bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF) {
         return UTF8;
     }
+
     rewind(file);
     return UTF8;
 }
@@ -73,19 +73,19 @@ unsigned char readCharUTF16(FILE *file, const enum Endianness ev) {
     return val;
 }
 
-void readStringFromFile(FILE *file, char *header, const int size, const enum Encoding encoding) {
+void readStringFromFile(FILE *file, char *str, const int size, const enum Encoding encoding) {
     // TODO: Correctly handle EOF when reading characters.
     if (encoding == UTF8) {
         for (int i = 0; i < size; i++) {
-            header[i] = (char) readCharUTF8(file);
+            str[i] = (char) readCharUTF8(file);
         }
     } else {
-        enum Endianness ev = encoding == UTF16LE ? LITTLE : BIG;
+        const enum Endianness ev = encoding == UTF16LE ? LITTLE : BIG;
         for (int i = 0; i < size; i++) {
-            header[i] = (char) readCharUTF16(file, ev);
+            str[i] = (char) readCharUTF16(file, ev);
         }
     }
-    header[size] = '\0';
+    str[size] = '\0';
 }
 
 void processDataFile(const char *filePath) {
@@ -108,16 +108,28 @@ void processDataFile(const char *filePath) {
     }
 
     char header[17];
-    char subHeader[15];
-    char nextText[6];
-    readStringFromFile(dataFile, header, 16, fileEncoding);
-    readStringFromFile(dataFile, subHeader, 14, fileEncoding);
-    // TODO: Find a safer way to seek for beginning of data after the header and subheader.
-    fseek(dataFile, 8, SEEK_CUR);
-    readStringFromFile(dataFile, nextText, 5, fileEncoding);
-    printf("File header: %s\n", header);
-    printf("File sub-header: %s\n", subHeader);
-    printf("Next text: %s\n", nextText);
+
+    readStringFromFile(dataFile, header, 8, fileEncoding);
+
+    if (strcmp(header, "SIMISA@F") == 0) {
+        printf("File is zlib compressed.\n");
+        printf("File header: %s\n", header);
+    } else {
+        char subHeader[15];
+        char nextText[6];
+        char *headerSuffix = header + 8;
+
+        readStringFromFile(dataFile, headerSuffix, 8, fileEncoding);
+        readStringFromFile(dataFile, subHeader, 14, fileEncoding);
+        // TODO: Find a safer way to seek for beginning of data after the header and subheader.
+        fseek(dataFile, 8, SEEK_CUR);
+        readStringFromFile(dataFile, nextText, 5, fileEncoding);
+
+        printf("File is uncompressed.\n");
+        printf("File header: %s\n", header);
+        printf("File sub-header: %s\n", subHeader);
+        printf("Next text: %s\n", nextText);
+    }
 
     fclose(dataFile);
 }
